@@ -93,9 +93,17 @@ jobs:
           msedgedriver-tool.exe
           Pop-Location
           Get-ChildItem build\webdriver
+      # The installer is already in dist\; this rebuilds the executable alone,
+      # with the debugging port WebDriver attaches to, and puts it beside the
+      # installed one, where its resources are.
+      - name: The app's executable, built for WebDriver
+        shell: pwsh
+        run: |
+          scripts\build-webdriver-app.ps1
+          Copy-Item build\webdriver\lattice-desktop-webdriver.exe "$env:LOCALAPPDATA\Lattice\"
       - name: The installed app in its own window, driven through WebDriver
         shell: pwsh
-        run: scripts\test-ui.ps1 -NativeDriver build\webdriver\msedgedriver.exe
+        run: scripts\test-ui.ps1 -App "$env:LOCALAPPDATA\Lattice\lattice-desktop-webdriver.exe" -NativeDriver build\webdriver\msedgedriver.exe
       - uses: actions/upload-artifact@v4
         with:
           name: lattice-desktop-windows-x64

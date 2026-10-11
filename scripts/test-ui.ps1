@@ -8,12 +8,15 @@
 # Lattice data to lose. The app must have been opened once, so its node
 # binaries are in WSL.
 #
-# Usage: scripts\test-ui.ps1 [-App <the installed app's .exe>]
+# Usage: scripts\test-ui.ps1 -App <.exe> -NativeDriver <msedgedriver.exe>
+#   -App is the executable scripts\build-webdriver-app.ps1 builds, copied into
+#   the installed app's directory (%LOCALAPPDATA%\Lattice): WebDriver cannot
+#   attach to the app that ships, which opens no debugging port.
 #   Needs Node.js 24, tauri-driver (`cargo install tauri-driver --locked`) and
 #   a msedgedriver.exe matching the PC's WebView2 runtime, named in
 #   -NativeDriver (https://github.com/chippers/msedgedriver-tool fetches one).
 param(
-  [string]$App = (Get-ChildItem "$env:LOCALAPPDATA\Lattice\*.exe" | Where-Object { $_.Name -notmatch 'uninstall' } | Select-Object -First 1).FullName,
+  [Parameter(Mandatory = $true)][string]$App,
   [Parameter(Mandatory = $true)][string]$NativeDriver
 )
 $ErrorActionPreference = "Stop"

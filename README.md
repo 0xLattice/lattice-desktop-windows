@@ -98,7 +98,10 @@ CI builds the installer and then, on a Windows runner:
   settings, a relaunch, and the common mistakes on the way (bad passwords, a
   bad address or amount, more than the balance, mining with the node stopped,
   bad ports). It replaces the node's host root in WSL, so it is for a CI
-  runner.
+  runner. WebDriver attaches through a debugging port, which the app that
+  ships does not open, so the window it drives is
+  `scripts\build-webdriver-app.ps1`'s: the same code and configuration with
+  that one browser argument added, run from the installed app's directory.
 
 The shared app's headless end-to-end tests drive a node directly, so they run
 where the node does: on macOS in lattice-desktop, and on Linux in
