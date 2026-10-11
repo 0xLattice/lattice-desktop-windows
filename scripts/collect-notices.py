@@ -46,7 +46,13 @@ elif mode == 'app':
         metadata = json.loads(subprocess.check_output(command))
         for package in metadata['packages']:
             if package['source']:
-                notices.collect(f"Cargo {package['name']} {package['version']}", Path(package['manifest_path']).parent, recursive=True)
+                label = f"Cargo {package['name']} {package['version']}"
+                notices.collect(label, Path(package['manifest_path']).parent, recursive=True)
+                fallback = root / 'docs/licenses' / f"{package['name']}-{package['version']}.txt"
+                if label in notices.missing and fallback.is_file():
+                    notices.records.append(f'\n## {label} — upstream license\n\n' + fallback.read_text(encoding='utf-8'))
+                    notices.missing.remove(label)
+    notices.records.append('\n## Microsoft WebView2 SDK 1.0.3800.47\n\n' + (root / 'docs/licenses/Microsoft.Web.WebView2-1.0.3800.47.txt').read_text(encoding='utf-8'))
 else:
     raise ValueError('Expected node or app')
 if notices.missing:
