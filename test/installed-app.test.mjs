@@ -25,7 +25,9 @@ const linuxBin = process.env.LATTICE_LINUX_BIN;
 const BINARIES = ["lattice", "lattice-node", "lattice-mining-coordinator", "lattice-miner"];
 
 const run = promisify(execFile);
-const wsl = async (...args) => (await run("wsl.exe", args, { windowsHide: true })).stdout;
+// No call here takes long; one that never returns fails the test instead of holding the run.
+const BRIEF = 120_000;
+const wsl = async (...args) => (await run("wsl.exe", args, { windowsHide: true, timeout: BRIEF })).stdout;
 
 const freePort = () => new Promise((done, fail) => {
   const server = createServer();
@@ -91,7 +93,7 @@ test("the installed app starts its own node in WSL", { skip: !app || !linuxBin, 
     assert.ok(existsSync(workerFile), "the installed app carries the GPU worker");
     const worker = (await wsl("-e", "wslpath", "-u", workerFile.replaceAll("\\", "/"))).trim();
     writeFileSync(topologyFile, JSON.stringify({ ...JSON.parse(readFileSync(topologyFile, "utf8")), mine: { worker, workers: 1, recipients: {} } }, null, 2));
-    const mine = (verb, env = {}) => run("wsl.exe", ["-e", `${installed}/lattice`, "mine", verb, "--root", root], { windowsHide: true, env: { ...process.env, ...env } });
+    const mine = (verb, env = {}) => run("wsl.exe", ["-e", `${installed}/lattice`, "mine", verb, "--root", root], { windowsHide: true, timeout: BRIEF, env: { ...process.env, ...env } });
     const logged = (pattern) => until(async () => (pattern.test(readFileSync(mineLog, "utf8")) ? true : undefined), `${pattern} in the mining log`, 120_000)
       .catch((e) => { throw new Error(`${e.message}\n${existsSync(mineLog) ? readFileSync(mineLog, "utf8") : "(no mining log)"}`); });
     // This machine has no graphics chip, so the worker fails each round and
