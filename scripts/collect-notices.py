@@ -40,7 +40,10 @@ elif mode == 'app':
         notices.records.append('\n## ' + relative + '\n\n' + (app / relative).read_text())
     target = 'x86_64-pc-windows-msvc' if sys.platform == 'win32' else 'x86_64-unknown-linux-gnu'
     for manifest in [app / 'src-tauri/Cargo.toml', root / '.build-miner-gpu/Cargo.toml']:
-        metadata = json.loads(subprocess.check_output(['cargo', 'metadata', '--locked', '--format-version', '1', '--filter-platform', target, '--manifest-path', str(manifest)]))
+        command = ['cargo', 'metadata', '--locked', '--format-version', '1', '--filter-platform', target, '--manifest-path', str(manifest)]
+        if manifest.parent.name == '.build-miner-gpu':
+            command += ['--features', 'opencl']
+        metadata = json.loads(subprocess.check_output(command))
         for package in metadata['packages']:
             if package['source']:
                 notices.collect(f"Cargo {package['name']} {package['version']}", Path(package['manifest_path']).parent, recursive=True)
