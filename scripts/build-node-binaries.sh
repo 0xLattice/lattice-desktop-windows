@@ -35,3 +35,5 @@ for name in lattice lattice-node lattice-mining-coordinator lattice-miner; do
 done
 printf '%s\n' "$commit" > "$out/COMMIT"
 echo "staged the node binaries at $commit in $out"
+
+python3 "$here/scripts/collect-notices.py" node "$out/NODE-NOTICES.txt"

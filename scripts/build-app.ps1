@@ -21,6 +21,8 @@ Push-Location $app
 try {
   npm ci
   if ($LASTEXITCODE -ne 0) { throw "npm ci failed" }
+  python (Join-Path $here "scripts\collect-notices.py") app (Join-Path $here "build\THIRD-PARTY-NOTICES.txt")
+  if ($LASTEXITCODE -ne 0) { throw "notice collection failed" }
   npx tauri build --config (Join-Path $here "tauri.windows.conf.json")
   if ($LASTEXITCODE -ne 0) { throw "tauri build failed" }
 } finally {

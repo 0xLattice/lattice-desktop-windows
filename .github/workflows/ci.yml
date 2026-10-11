@@ -19,7 +19,7 @@ jobs:
         with:
           submodules: recursive
       - run: git config --global --add safe.directory '*'
-      - run: apt-get update && apt-get install -y --no-install-recommends libsqlite3-dev
+      - run: apt-get update && apt-get install -y --no-install-recommends libsqlite3-dev python3
       - run: scripts/build-node-binaries.sh
       - uses: actions/upload-artifact@v4
         with:
@@ -73,6 +73,8 @@ jobs:
           $installer = Get-ChildItem dist\*.exe | Select-Object -First 1
           Start-Process $installer.FullName -ArgumentList '/S' -Wait
           Get-ChildItem "$env:LOCALAPPDATA\Lattice"
+          $notices = Join-Path $env:LOCALAPPDATA "Lattice\THIRD-PARTY-NOTICES.txt"
+          if (-not (Test-Path $notices) -or (Get-Item $notices).Length -eq 0) { throw "installed notices missing" }
       - name: The installed app starts its node in WSL, and its mining loop there runs the Windows worker
         shell: pwsh
         run: |
