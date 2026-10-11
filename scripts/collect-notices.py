@@ -2,6 +2,7 @@
 """Collect pinned dependency notices, preserving their attribution verbatim."""
 import importlib.util
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -10,12 +11,14 @@ root = Path(__file__).resolve().parent.parent
 app = root / 'vendor/lattice-desktop'
 spec = importlib.util.spec_from_file_location('notices', app / 'scripts/collect-release-notices.py')
 notices = importlib.util.module_from_spec(spec)
+sys.dont_write_bytecode = True
 spec.loader.exec_module(notices)
 notices.records.clear()
 mode, output = sys.argv[1:]
 if mode == 'node':
     notices.records.append('\n## Swift 6.1 runtime\n\n' + (root / 'docs/licenses/Swift-6.1-LICENSE.txt').read_text())
-    for package in sorted((root / '.build-node/.build/checkouts').iterdir()):
+    build_root = Path(os.environ.get('RELEASE_BUILD_ROOT', str(root / '.build-node/.build')))
+    for package in sorted((build_root / 'release-canonical/checkouts').iterdir()):
         if package.is_dir():
             notices.collect('Swift ' + package.name, package, recursive=True)
 elif mode == 'app':
