@@ -39,6 +39,16 @@ $root = "$data/host"
 $commit = (Get-Content (Join-Path (Split-Path -Parent $App) "linux\COMMIT") -Raw).Trim()
 $lattice = "$data/bin/$commit/lattice"
 
+# No window of the app left open, nor the webview processes one leaves behind
+# when it is killed: a new window would join them, and they were not started
+# for WebDriver.
+$left = Get-Process lattice-desktop, msedgewebview2 -ErrorAction SilentlyContinue
+if ($left) {
+  Write-Host "stopping: $(($left | ForEach-Object { "$($_.ProcessName) $($_.Id)" }) -join ', ')"
+  $left | Stop-Process -Force -ErrorAction SilentlyContinue
+  Start-Sleep -Seconds 2
+}
+
 # A private node for the app to find: stopped, emptied, no peers, free ports.
 wsl.exe -e $lattice mine stop --root $root 2>$null | Out-Null
 wsl.exe -e $lattice down --root $root 2>$null | Out-Null
