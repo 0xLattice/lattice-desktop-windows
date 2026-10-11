@@ -1,7 +1,9 @@
 // The installed app, launched for real on Windows with WSL: the app opens,
 // its page reaches the shell, and the shell copies the Linux node binaries
 // into the WSL distribution, runs the CLI there and starts the node, which
-// answers on Windows' own loopback. It cannot see or click the window.
+// answers on Windows' own loopback. It cannot see or click the window, so
+// mining is started as the app starts it: the installed CLI's mining loop, in
+// WSL, told to search with the installed Windows worker.
 //
 //   $env:LATTICE_APP = "<the installed app's .exe>"
 //   $env:LATTICE_LINUX_BIN = "build\linux"
@@ -15,7 +17,7 @@ import assert from "node:assert/strict";
 import { execFile, spawn } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createServer } from "node:net";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { promisify } from "node:util";
 
 const app = process.env.LATTICE_APP;
@@ -79,9 +81,31 @@ test("the installed app starts its own node in WSL", { skip: !app || !linuxBin, 
     assert.ok(existsSync(join(share(installed), "COMMIT")), "the app installed its node binaries in WSL");
     assert.ok(existsSync(join(share(root), "chains", "Nexus", ".cookie")), "the node the app started wrote its cookie");
     assert.match(await wsl("-e", `${installed}/lattice`, "status", "--root", root), /^Nexus: active/m);
-    assert.equal(existsSync(join(share(root), "log", "mine.log")), false, "opening the app starts no miner");
+    const mineLog = join(share(root), "log", "mine.log");
+    assert.equal(existsSync(mineLog), false, "opening the app starts no miner");
+
+    // Mining on the graphics chip, set up as the app sets it up: lattice.json
+    // names the installed Windows worker by its path under WSL's mount of the
+    // drive, and the mining loop, a Linux program, runs it.
+    const workerFile = join(dirname(app), "bin", "lattice-miner-gpu.exe");
+    assert.ok(existsSync(workerFile), "the installed app carries the GPU worker");
+    const worker = (await wsl("-e", "wslpath", "-u", workerFile.replaceAll("\\", "/"))).trim();
+    writeFileSync(topologyFile, JSON.stringify({ ...JSON.parse(readFileSync(topologyFile, "utf8")), mine: { worker, workers: 1, recipients: {} } }, null, 2));
+    const mine = (verb, env = {}) => run("wsl.exe", ["-e", `${installed}/lattice`, "mine", verb, "--root", root], { windowsHide: true, env: { ...process.env, ...env } });
+    const logged = (pattern) => until(async () => (pattern.test(readFileSync(mineLog, "utf8")) ? true : undefined), `${pattern} in the mining log`, 120_000)
+      .catch((e) => { throw new Error(`${e.message}\n${existsSync(mineLog) ? readFileSync(mineLog, "utf8") : "(no mining log)"}`); });
+    // This machine has no graphics chip, so the worker fails each round
+    // instead of reporting ranges it never searched.
+    await mine("start");
+    await logged(/retrying after workerFailed/);
+    await mine("stop");
+    // Told to search on the processor instead (the variable crosses from the
+    // Linux loop to the Windows worker because WSLENV names it), it finds blocks.
+    await mine("start", { LATTICE_MINER_BACKEND: "cpu", WSLENV: "LATTICE_MINER_BACKEND" });
+    await logged(/ accepted tip=/);
   } finally {
     // Killing the app does not run its exit handler, so stop its node as the handler would.
+    await wsl("-e", `${staged}/lattice`, "mine", "stop", "--root", root).catch(() => {});
     await wsl("-e", `${staged}/lattice`, "down", "--root", root).catch(() => {});
     child.kill();
     await exited;

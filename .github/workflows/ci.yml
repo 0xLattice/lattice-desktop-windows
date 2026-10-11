@@ -46,6 +46,9 @@ jobs:
         with:
           node-version: 24
       - uses: dtolnay/rust-toolchain@stable
+      - name: Build the GPU worker
+        shell: pwsh
+        run: scripts\build-gpu-worker.ps1
       - name: Build the installer
         shell: pwsh
         run: scripts\build-app.ps1
@@ -70,7 +73,7 @@ jobs:
           $installer = Get-ChildItem dist\*.exe | Select-Object -First 1
           Start-Process $installer.FullName -ArgumentList '/S' -Wait
           Get-ChildItem "$env:LOCALAPPDATA\Lattice"
-      - name: The installed app starts its node in WSL
+      - name: The installed app starts its node in WSL, and its mining loop there runs the Windows worker
         shell: pwsh
         run: |
           $exe = Get-ChildItem "$env:LOCALAPPDATA\Lattice\*.exe" | Where-Object { $_.Name -notmatch 'uninstall' } | Select-Object -First 1

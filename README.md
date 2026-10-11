@@ -35,8 +35,15 @@ for Linux:
 - **The node runs while the app is open.** WSL stops a distribution once
   nothing started from Windows is running in it, so the app keeps it up for
   as long as it is open and stops the node when it quits.
-- Mining searches on the processor, inside WSL. There is no graphics-chip
-  worker in this package yet.
+- Mining searches on the graphics chip through OpenCL (AMD, Intel, NVIDIA),
+  or on the processor. The graphics-chip worker is the one program the app
+  runs on Windows itself, with the graphics driver's OpenCL: WSL offers Linux
+  programs no graphics chip it could use, but it runs a Windows program a
+  Linux one starts, so the mining loop in WSL is given the worker's path
+  under `/mnt/c`. That needs WSL's Windows interoperability and drive
+  mounting, both on by default. The app offers the graphics chip when the
+  worker finds a hash on it; without a driver that provides OpenCL it offers
+  the processor only, which searches inside WSL.
 
 ## Build
 
@@ -59,8 +66,13 @@ That writes `lattice`, `lattice-node`, `lattice-mining-coordinator` and
 Then, on Windows, with Node.js 24 and a Rust toolchain:
 
 ```powershell
+scripts\build-gpu-worker.ps1
 scripts\build-app.ps1
 ```
+
+The first builds the GPU mining worker, `lattice-miner-gpu.exe`, from
+[lattice-miner-gpu](https://github.com/adalinxx/lattice-miner-gpu) at the
+commit in `vendor/lattice-desktop/MINER_GPU_COMMIT`, to `build\windows\`.
 
 The installer is written to `dist\`. It installs for the current user and
 needs no administrator rights.
@@ -73,7 +85,12 @@ CI builds the installer and then, on a Windows runner:
 - installs the app, sets up WSL, and runs `test/installed-app.test.mjs`, which
   launches the installed app and checks that it copied its node binaries into
   WSL, started the node there through the CLI, and that the node answers on
-  Windows' loopback.
+  Windows' loopback. It then starts the installed mining loop in WSL with the
+  installed Windows worker, as the app sets it up. A runner has no graphics
+  chip, so it checks that the worker fails there instead of reporting ranges
+  it never searched, and that the same worker, told to search on the
+  processor, finds blocks the node accepts. OpenCL on a real graphics chip is
+  not run here.
 
 The shared app's headless end-to-end tests drive a node directly, so they run
 where the node does: on macOS in lattice-desktop, and on Linux in
