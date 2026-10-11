@@ -27,12 +27,19 @@ if (git -C $src status --porcelain --untracked-files=no) {
   throw "lattice-miner-gpu checkout has local changes; refusing to bundle it"
 }
 
+# The C runtime is linked in, as it is in the app itself: the worker must not
+# need the Visual C++ redistributable on a PC that does not have it. The
+# target directory is named, so a CARGO_TARGET_DIR set outside cannot leave an
+# older build to be picked up below.
+$flags = $env:RUSTFLAGS
+$env:RUSTFLAGS = "-C target-feature=+crt-static"
 Push-Location $src
 try {
-  cargo build --release --locked --features opencl
+  cargo build --release --locked --features opencl --target-dir (Join-Path $src "target")
   if ($LASTEXITCODE -ne 0) { throw "cargo build failed" }
 } finally {
   Pop-Location
+  $env:RUSTFLAGS = $flags
 }
 
 $out = Join-Path $here "build\windows"

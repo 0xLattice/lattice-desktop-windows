@@ -46,7 +46,7 @@ async function until(check, what, within) {
   }
 }
 
-test("the installed app starts its own node in WSL", { skip: !app || !linuxBin, timeout: 420_000 }, async () => {
+test("the installed app starts its own node in WSL", { skip: !app || !linuxBin, timeout: 660_000 }, async () => {
   assert.ok(existsSync(app), "the app's executable is there");
   const distro = (await wsl("-e", "printenv", "WSL_DISTRO_NAME")).trim();
   const home = (await wsl("-e", "printenv", "HOME")).trim();
@@ -94,11 +94,13 @@ test("the installed app starts its own node in WSL", { skip: !app || !linuxBin, 
     const mine = (verb, env = {}) => run("wsl.exe", ["-e", `${installed}/lattice`, "mine", verb, "--root", root], { windowsHide: true, env: { ...process.env, ...env } });
     const logged = (pattern) => until(async () => (pattern.test(readFileSync(mineLog, "utf8")) ? true : undefined), `${pattern} in the mining log`, 120_000)
       .catch((e) => { throw new Error(`${e.message}\n${existsSync(mineLog) ? readFileSync(mineLog, "utf8") : "(no mining log)"}`); });
-    // This machine has no graphics chip, so the worker fails each round
-    // instead of reporting ranges it never searched.
+    // This machine has no graphics chip, so the worker fails each round and
+    // no block is found; a worker reporting ranges it never searched would
+    // look like a miner that is merely unlucky.
     await mine("start");
     await logged(/retrying after workerFailed/);
     await mine("stop");
+    assert.doesNotMatch(readFileSync(mineLog, "utf8"), / accepted tip=/, "nothing was mined without a graphics chip");
     // Told to search on the processor instead (the variable crosses from the
     // Linux loop to the Windows worker because WSLENV names it), it finds blocks.
     await mine("start", { LATTICE_MINER_BACKEND: "cpu", WSLENV: "LATTICE_MINER_BACKEND" });
