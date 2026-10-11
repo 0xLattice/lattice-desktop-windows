@@ -80,6 +80,22 @@ jobs:
           $env:LATTICE_APP = $exe.FullName
           $env:LATTICE_LINUX_BIN = "build\linux"
           node --test test/installed-app.test.mjs
+      - name: WebDriver for the app's window
+        shell: pwsh
+        run: |
+          cargo install tauri-driver --locked
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          # The msedgedriver that matches this machine's WebView2 runtime.
+          cargo install --git https://github.com/chippers/msedgedriver-tool
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          New-Item -ItemType Directory -Force build\webdriver | Out-Null
+          Push-Location build\webdriver
+          msedgedriver-tool.exe
+          Pop-Location
+          Get-ChildItem build\webdriver
+      - name: The installed app in its own window, driven through WebDriver
+        shell: pwsh
+        run: scripts\test-ui.ps1 -NativeDriver build\webdriver\msedgedriver.exe
       - uses: actions/upload-artifact@v4
         with:
           name: lattice-desktop-windows-x64

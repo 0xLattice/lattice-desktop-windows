@@ -91,6 +91,14 @@ CI builds the installer and then, on a Windows runner:
   it never searched, and that the same worker, told to search on the
   processor, finds blocks the node accepts. OpenCL on a real graphics chip is
   not run here.
+- runs `scripts\test-ui.ps1`, which drives the installed app in its own
+  window through WebDriver, with real clicks and keys and nothing standing in
+  for the shell or the node: making a wallet, the node the app starts in WSL,
+  sending, mining, a transfer seen through to a confirmation, locking, node
+  settings, a relaunch, and the common mistakes on the way (bad passwords, a
+  bad address or amount, more than the balance, mining with the node stopped,
+  bad ports). It replaces the node's host root in WSL, so it is for a CI
+  runner.
 
 The shared app's headless end-to-end tests drive a node directly, so they run
 where the node does: on macOS in lattice-desktop, and on Linux in
