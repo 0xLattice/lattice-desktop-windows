@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  # The node the app carries: the Linux build, at the commit the shared app pins.
+  node:
+    runs-on: ubuntu-22.04
+    container: swift:6.1-jammy
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+      - run: git config --global --add safe.directory '*'
+      - run: apt-get update && apt-get install -y --no-install-recommends libsqlite3-dev
+      - run: scripts/build-node-binaries.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: node-linux-amd64
+          path: build/linux/
+          if-no-files-found: error
+
+  # The app as it ships: the shared app packaged around those binaries, its
+  # tests run on Windows, and the installed app launched with WSL, where it
+  # has to bring its own node up.
+  app:
+    needs: node
+    runs-on: windows-2025
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          submodules: recursive
+      - uses: actions/download-artifact@v4
+        with:
+          name: node-linux-amd64
+          path: build/linux
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Build the installer
+        shell: pwsh
+        run: scripts\build-app.ps1
+      - name: The shared app's tests
+        shell: pwsh
+        working-directory: vendor/lattice-desktop
+        run: |
+          npm run typecheck
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          npm test
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          $env:TAURI_CONFIG = Get-Content ..\..\tauri.windows.conf.json -Raw
+          cargo test --manifest-path src-tauri/Cargo.toml
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+      - uses: Vampire/setup-wsl@v7
+        with:
+          distribution: Ubuntu-24.04
+          additional-packages: libsqlite3-0
+      - name: Install the app
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem dist\*.exe | Select-Object -First 1
+          Start-Process $installer.FullName -ArgumentList '/S' -Wait
+          Get-ChildItem "$env:LOCALAPPDATA\Lattice"
+      - name: The installed app starts its node in WSL
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem "$env:LOCALAPPDATA\Lattice\*.exe" | Where-Object { $_.Name -notmatch 'uninstall' } | Select-Object -First 1
+          $env:LATTICE_APP = $exe.FullName
+          $env:LATTICE_LINUX_BIN = "build\linux"
+          node --test test/installed-app.test.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: lattice-desktop-windows-x64
+          path: dist/
+          if-no-files-found: error

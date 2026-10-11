@@ -1,0 +1,14 @@
+{
+  "bundle": {
+    "targets": ["nsis"],
+    "externalBin": [],
+    "icon": ["../../../icons/icon.ico"],
+    "resources": {
+      "../../../build/linux/lattice": "linux/lattice",
+      "../../../build/linux/lattice-node": "linux/lattice-node",
+      "../../../build/linux/lattice-mining-coordinator": "linux/lattice-mining-coordinator",
+      "../../../build/linux/lattice-miner": "linux/lattice-miner",
+      "../../../build/linux/COMMIT": "linux/COMMIT"
+    }
+  }
+}

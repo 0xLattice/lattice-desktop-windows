@@ -1,0 +1,4 @@
+[submodule "vendor/lattice-desktop"]
+	path = vendor/lattice-desktop
+	url = https://github.com/adalinxx/lattice-desktop.git
+	branch = platform/windows
