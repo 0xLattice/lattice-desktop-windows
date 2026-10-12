@@ -80,8 +80,13 @@ test('release UI: chain management, settings, Activity, and inert lock keyboard 
     await choose('select[aria-label="Peers of Nexus/releasecheck"]', 'custom');
     const peer = '11'.repeat(32) + '@127.0.0.1:65535';
     await type('textarea[aria-label="Peer list of Nexus/releasecheck"]', peer);
+    // WSL exposes the written file before the restarted node's page refresh finishes.
+    // Wait for the replacement form before obtaining the next clickable element.
+    await session.run("window.__releasePeerForm = document.querySelector('select[aria-label=\"Peers of Nexus/releasecheck\"]'); return true");
     await press('Save peers of Nexus/releasecheck');
     await until(() => config().peers?.['Nexus/releasecheck']?.[0] === peer, 'per-chain peer format saved');
+    await until(() => session.run("const field = document.querySelector('select[aria-label=\"Peers of Nexus/releasecheck\"]'); return field && field !== window.__releasePeerForm && field.value === 'custom'"), 'replacement peer form after save');
+    await session.run('delete window.__releasePeerForm; return true');
     assert.deepEqual(config().peers.Nexus, [], 'Nexus remains isolated');
     await press('Stop hosting releasecheck');
     await press('Keep it');
