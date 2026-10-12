@@ -110,6 +110,9 @@ jobs:
       - name: The installed app in its own window, driven through WebDriver
         shell: pwsh
         run: scripts\test-ui.ps1 -App "$env:LOCALAPPDATA\Lattice\lattice-desktop-webdriver.exe" -NativeDriver build\webdriver\msedgedriver.exe
+      - name: Native release navigation and lock keyboard checks
+        shell: pwsh
+        run: scripts\test-ui.ps1 -App "$env:LOCALAPPDATA\Lattice\lattice-desktop-webdriver.exe" -NativeDriver build\webdriver\msedgedriver.exe -Test test\release-ui.test.mjs
       - uses: actions/upload-artifact@v4
         with:
           name: lattice-desktop-windows-x64
