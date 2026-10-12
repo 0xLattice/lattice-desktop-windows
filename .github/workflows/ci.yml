@@ -70,9 +70,13 @@ jobs:
       - name: Install the app
         shell: pwsh
         run: |
-          $installer = Get-ChildItem dist\*.exe | Select-Object -First 1
+          $version = (Get-Content vendor/lattice-desktop/src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          $installer = Get-Item "dist\Lattice_${version}_x64-setup.exe"
           Start-Process $installer.FullName -ArgumentList '/S' -Wait
           Get-ChildItem "$env:LOCALAPPDATA\Lattice"
+          $info = (Get-Item "$env:LOCALAPPDATA\Lattice\lattice-desktop.exe").VersionInfo
+          $installedVersion = "$($info.ProductMajorPart).$($info.ProductMinorPart).$($info.ProductBuildPart)"
+          if ($installedVersion -ne $version -or $info.ProductPrivatePart -ne 0) { throw "installed app version does not match release configuration" }
           $notices = Join-Path $env:LOCALAPPDATA "Lattice\THIRD-PARTY-NOTICES.txt"
           if (-not (Test-Path $notices) -or (Get-Item $notices).Length -eq 0) { throw "installed notices missing" }
       - name: The installed app starts its node in WSL, and its mining loop there runs the Windows worker
