@@ -1,0 +1,10 @@
+--- a/vendor/lattice-desktop/test/ui/desktop.ui.test.mjs
++++ b/vendor/lattice-desktop/test/ui/desktop.ui.test.mjs
+@@ -265,6 +265,7 @@
+     await shows(/Balance on Nexus/);
+     await openNode();
+     await shows(/Your node/);
++    await field(RPC); // The heading is rendered before the asynchronous port form.
+     assert.equal(await valueOf(RPC), rpc, "the port is what it was");
+     await press("Back to wallet");
+     await shows(/Balance on Nexus/);

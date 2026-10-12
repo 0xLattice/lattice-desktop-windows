@@ -107,6 +107,14 @@ jobs:
         run: |
           scripts\build-webdriver-app.ps1
           Copy-Item build\webdriver\lattice-desktop-webdriver.exe "$env:LOCALAPPDATA\Lattice\"
+      # Test-only readiness correction; the installer is already built above.
+      - name: Wait for the node form in the shared UI test
+        shell: pwsh
+        run: |
+          git apply --check test/shared-ui-ready.patch
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          git apply test/shared-ui-ready.patch
+          if ($LASTEXITCODE -ne 0) { exit 1 }
       - name: The installed app in its own window, driven through WebDriver
         shell: pwsh
         run: scripts\test-ui.ps1 -App "$env:LOCALAPPDATA\Lattice\lattice-desktop-webdriver.exe" -NativeDriver build\webdriver\msedgedriver.exe
