@@ -97,6 +97,8 @@ test('release UI: chain management, settings, Activity, and inert lock keyboard 
     assert.deepEqual(config().peers, [], 'removing the child restores the legacy-compatible peer list');
     await press('Back to wallet'); await shows(/Balance on Nexus/);
     await session.click(await field('#net-badge'));
+    // The chain menu replaces its rows while hosted/discovered chains load.
+    await until(() => session.run("return document.querySelector('.chain-menu .toast')?.textContent === ''"), 'chain menu loading finished');
     await field('.chain-menu [data-chain="Nexus"]');
     await session.click(await field('.chain-menu [data-chain="Nexus"]'));
     await press('Mining'); await shows(/MiningNot mining/);
