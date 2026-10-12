@@ -70,9 +70,13 @@ jobs:
       - name: Install the app
         shell: pwsh
         run: |
-          $installer = Get-ChildItem dist\*.exe | Select-Object -First 1
+          $version = (Get-Content vendor/lattice-desktop/src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          $installer = Get-Item "dist\Lattice_${version}_x64-setup.exe"
           Start-Process $installer.FullName -ArgumentList '/S' -Wait
           Get-ChildItem "$env:LOCALAPPDATA\Lattice"
+          $info = (Get-Item "$env:LOCALAPPDATA\Lattice\lattice-desktop.exe").VersionInfo
+          $installedVersion = "$($info.ProductMajorPart).$($info.ProductMinorPart).$($info.ProductBuildPart)"
+          if ($installedVersion -ne $version -or $info.ProductPrivatePart -ne 0) { throw "installed app version does not match release configuration" }
           $notices = Join-Path $env:LOCALAPPDATA "Lattice\THIRD-PARTY-NOTICES.txt"
           if (-not (Test-Path $notices) -or (Get-Item $notices).Length -eq 0) { throw "installed notices missing" }
       - name: The installed app starts its node in WSL, and its mining loop there runs the Windows worker
@@ -103,9 +107,20 @@ jobs:
         run: |
           scripts\build-webdriver-app.ps1
           Copy-Item build\webdriver\lattice-desktop-webdriver.exe "$env:LOCALAPPDATA\Lattice\"
+      # Test-only readiness correction; the installer is already built above.
+      - name: Wait for the node form in the shared UI test
+        shell: pwsh
+        run: |
+          git apply --check test/shared-ui-ready.patch
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          git apply test/shared-ui-ready.patch
+          if ($LASTEXITCODE -ne 0) { exit 1 }
       - name: The installed app in its own window, driven through WebDriver
         shell: pwsh
         run: scripts\test-ui.ps1 -App "$env:LOCALAPPDATA\Lattice\lattice-desktop-webdriver.exe" -NativeDriver build\webdriver\msedgedriver.exe
+      - name: Native release navigation and lock keyboard checks
+        shell: pwsh
+        run: scripts\test-ui.ps1 -App "$env:LOCALAPPDATA\Lattice\lattice-desktop-webdriver.exe" -NativeDriver build\webdriver\msedgedriver.exe -Test test\release-ui.test.mjs
       - uses: actions/upload-artifact@v4
         with:
           name: lattice-desktop-windows-x64

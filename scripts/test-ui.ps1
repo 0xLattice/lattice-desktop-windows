@@ -4,8 +4,7 @@
 #
 # It REPLACES the node's host root in the default WSL distribution
 # (~/.local/share/Lattice/host) with a private one that has no peers, and
-# makes a wallet in %APPDATA%\Lattice: it is for a CI runner, or a PC with no
-# Lattice data to lose. The app must have been opened once, so its node
+# makes a wallet in %APPDATA%\Lattice: it is restricted to a disposable CI runner. The app must have been opened once, so its node
 # binaries are in WSL.
 #
 # Usage: scripts\test-ui.ps1 -App <.exe> -NativeDriver <msedgedriver.exe>
@@ -17,9 +16,11 @@
 #   -NativeDriver (https://github.com/chippers/msedgedriver-tool fetches one).
 param(
   [Parameter(Mandatory = $true)][string]$App,
-  [Parameter(Mandatory = $true)][string]$NativeDriver
+  [Parameter(Mandatory = $true)][string]$NativeDriver,
+  [string]$Test = "vendor\lattice-desktop\test\ui\desktop.ui.test.mjs"
 )
 $ErrorActionPreference = "Stop"
+if ($env:CI -ne "true") { throw "This test resets disposable CI data and must not run on a personal installation." }
 $here = Split-Path -Parent $PSScriptRoot
 
 function Invoke-Wsl {
@@ -65,10 +66,11 @@ $topology | Add-Member -Force -NotePropertyName peers -NotePropertyValue @()
 [System.IO.File]::WriteAllText($topologyFile, ($topology | ConvertTo-Json -Depth 20))
 Remove-Item -Recurse -Force "$env:APPDATA\Lattice\wallet" -ErrorAction SilentlyContinue
 
+$env:LATTICE_UI_TOPOLOGY_FILE = $topologyFile
 $env:LATTICE_UI_APP = $App
 $env:LATTICE_UI_NATIVE_DRIVER = (Resolve-Path $NativeDriver).Path
 try {
-  node --test (Join-Path $here "vendor\lattice-desktop\test\ui\desktop.ui.test.mjs")
+  node --test (Join-Path $here $Test)
   if ($LASTEXITCODE -ne 0) { throw "the UI test failed" }
 } finally {
   # A failed run may leave the node up; the app's own exit would have stopped it.
