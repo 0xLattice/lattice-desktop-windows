@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build the node binaries the app carries (`lattice`, `lattice-node`,
-# `lattice-mining-coordinator`, `lattice-miner`) from adalinxx/lattice-node at
+# `lattice-mining-coordinator`, `lattice-miner`) from 0xLattice/lattice-node at
 # the commit the shared app pins (vendor/lattice-desktop/NODE_COMMIT), with the
 # node's own release build: optimized, the Swift runtime linked in, so they run
 # in a plain WSL distribution with glibc and SQLite. The app runs them there:
@@ -16,7 +16,7 @@ commit="$(tr -d '[:space:]' < "$here/vendor/lattice-desktop/NODE_COMMIT")"
 src="$here/.build-node"
 
 if [ ! -d "$src/.git" ]; then
-  git clone --quiet https://github.com/adalinxx/lattice-node.git "$src"
+  git clone --quiet https://github.com/0xLattice/lattice-node.git "$src"
 fi
 git -C "$src" fetch --quiet origin "$commit"
 git -C "$src" checkout --quiet --detach "$commit"
