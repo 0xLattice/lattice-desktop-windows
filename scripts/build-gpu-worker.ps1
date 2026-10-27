@@ -1,5 +1,5 @@
 # Build the GPU mining worker the app carries (lattice-miner-gpu.exe) from
-# adalinxx/lattice-miner-gpu at the commit the shared app pins
+# 0xLattice/lattice-miner-gpu at the commit the shared app pins
 # (vendor/lattice-desktop/MINER_GPU_COMMIT), with its OpenCL backend. It is a
 # Windows program, unlike the node binaries: the graphics chip is Windows'.
 # OpenCL is loaded when it runs, so the build needs no OpenCL library.
@@ -19,7 +19,7 @@ function Invoke-Git {
 }
 
 if (-not (Test-Path (Join-Path $src ".git"))) {
-  Invoke-Git clone --quiet https://github.com/adalinxx/lattice-miner-gpu.git $src
+  Invoke-Git clone --quiet https://github.com/0xLattice/lattice-miner-gpu.git $src
 }
 Invoke-Git -C $src fetch --quiet origin $commit
 Invoke-Git -C $src checkout --quiet --detach $commit

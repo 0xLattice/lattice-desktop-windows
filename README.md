@@ -3,7 +3,7 @@
 A full Lattice node and the Lattice Wallet in one Windows app, as an installer.
 
 This repository is the Windows packaging of
-[lattice-desktop](https://github.com/adalinxx/lattice-desktop). The app itself
+[lattice-desktop](https://github.com/0xLattice/lattice-desktop). The app itself
 (the wallet, the node screens, the shell that runs the node) is that
 repository, pinned here as the submodule `vendor/lattice-desktop`, and is the
 same code on every platform. What is here is only what differs on Windows:
@@ -13,7 +13,7 @@ same code on every platform. What is here is only what differs on Windows:
 - and the check that the installed app works (`test/installed-app.test.mjs`, CI).
 
 What the app does is described in
-[lattice-desktop's README](https://github.com/adalinxx/lattice-desktop#readme).
+[lattice-desktop's README](https://github.com/0xLattice/lattice-desktop#readme).
 
 ## The node runs in WSL
 
@@ -50,7 +50,7 @@ for Linux:
 The node binaries are a Linux build. On Linux, in WSL, or with Docker:
 
 ```sh
-git clone --recurse-submodules https://github.com/adalinxx/lattice-desktop-windows.git
+git clone --recurse-submodules https://github.com/0xLattice/lattice-desktop-windows.git
 cd lattice-desktop-windows
 docker run --rm -v "$PWD":/work -w /work swift:6.1-jammy bash -c '
   git config --global --add safe.directory "*" &&
@@ -60,7 +60,7 @@ docker run --rm -v "$PWD":/work -w /work swift:6.1-jammy bash -c '
 
 That writes `lattice`, `lattice-node`, `lattice-mining-coordinator` and
 `lattice-miner` to `build/linux/`, built from
-[lattice-node](https://github.com/adalinxx/lattice-node) at the commit in
+[lattice-node](https://github.com/0xLattice/lattice-node) at the commit in
 `vendor/lattice-desktop/NODE_COMMIT`, with the node's own release build.
 
 Then, on Windows, with Node.js 24 and a Rust toolchain:
@@ -71,7 +71,7 @@ scripts\build-app.ps1
 ```
 
 The first builds the GPU mining worker, `lattice-miner-gpu.exe`, from
-[lattice-miner-gpu](https://github.com/adalinxx/lattice-miner-gpu) at the
+[lattice-miner-gpu](https://github.com/0xLattice/lattice-miner-gpu) at the
 commit in `vendor/lattice-desktop/MINER_GPU_COMMIT`, to `build\windows\`.
 
 The installer is written to `dist\`. It installs for the current user and
@@ -105,7 +105,7 @@ CI builds the installer and then, on a Windows runner:
 
 The shared app's headless end-to-end tests drive a node directly, so they run
 where the node does: on macOS in lattice-desktop, and on Linux in
-[lattice-desktop-linux](https://github.com/adalinxx/lattice-desktop-linux).
+[lattice-desktop-linux](https://github.com/0xLattice/lattice-desktop-linux).
 
 ## Updating
 
